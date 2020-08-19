@@ -2535,14 +2535,14 @@ class RealmCreationTest(ZulipTestCase):
         with self.settings(ROOT_DOMAIN_LANDING_PAGE=True):
             result = self.submit_reg_form_for_user(email, password,
                                                    realm_subdomain = 'abcdef',
-                                                   realm_in_root_domain = 'true',
+                                                   realm_url = 'realm_in_root_domain',
                                                    realm_name = realm_name)
             self.assert_in_response('unavailable', result)
 
         # test valid use of root domain
         result = self.submit_reg_form_for_user(email, password,
                                                realm_subdomain = 'abcdef',
-                                               realm_in_root_domain = 'true',
+                                               realm_url = 'realm_in_root_domain',
                                                realm_name = realm_name)
         self.assertEqual(result.status_code, 302)
         self.assertTrue(result.url.startswith('http://testserver/accounts/login/subdomain/'))

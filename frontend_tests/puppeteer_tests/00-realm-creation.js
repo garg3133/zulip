@@ -56,7 +56,7 @@ async function realm_creation_tests(page) {
     };
     // For some reason, page.click() does not work this for particular checkbox
     // so use page.$eval here to call the .click method in the browser.
-    await page.$eval("#realm_in_root_domain", (el) => el.click());
+    await page.$eval("#realm_with_subdomain", (el) => el.click());
     await common.fill_form(page, "#registration", params);
     await page.$eval("#registration", (form) => form.submit());
 

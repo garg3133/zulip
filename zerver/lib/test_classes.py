@@ -490,7 +490,7 @@ class ZulipTestCase(TestCase):
             realm_name: str="Zulip Test",
             realm_subdomain: str="zuliptest",
             from_confirmation: str='', full_name: Optional[str]=None,
-            timezone: str='', realm_in_root_domain: Optional[str]=None,
+            timezone: str='', realm_url: Optional[str]=None,
             default_stream_groups: Sequence[str]=[],
             source_realm: str='',
             key: Optional[str]=None, **kwargs: Any) -> HttpResponse:
@@ -516,8 +516,8 @@ class ZulipTestCase(TestCase):
             'default_stream_group': default_stream_groups,
             'source_realm': source_realm,
         }
-        if realm_in_root_domain is not None:
-            payload['realm_in_root_domain'] = realm_in_root_domain
+        if realm_url is not None:
+            payload['realm_url'] = realm_url
         return self.client_post('/accounts/register/', payload, **kwargs)
 
     def get_confirmation_url_from_outbox(
