@@ -77,3 +77,6 @@ semgrep
 
 # Contains Pysa, a security-focused static analyzer
 pyre-check
+
+# Included bson module needed for rocketchat import
+pymongo
