@@ -1,13 +1,14 @@
 import logging
 import os
 import random
+import secrets
 import re
 import subprocess
 from typing import Any, Dict, List, Set, Tuple
 
 import bson
 import requests
-import ujson
+# import ujson
 from django.conf import settings
 from django.forms.models import model_to_dict
 from django.utils.timezone import now as timezone_now
@@ -30,7 +31,7 @@ from zerver.data_import.import_util import (
 )
 from zerver.lib.avatar_hash import user_avatar_path_from_ids
 from zerver.lib.export import MESSAGE_BATCH_CHUNK_SIZE
-from zerver.lib.upload import random_name, sanitize_name
+from zerver.lib.upload import sanitize_name
 from zerver.models import Recipient, UserProfile
 
 # stubs
@@ -96,6 +97,17 @@ def rocketchat_workspace_to_realm(domain_name: str,
         zerver_recipient
 
 
+def convert_data_to_json(rocketchat_data_dir: str, json_output_dir: str) -> None:
+    for file_name in os.listdir(rocketchat_data_dir):
+        if file_name.split(".")[1] == "bson":
+            print(file_name)
+            with open(os.path.join(rocketchat_data_dir, file_name), 'rb') as fcache:
+                file_nn = file_name.split(".")[0]
+                print(file_nn)
+                users_json = bson.decode_all(fcache.read())
+                create_converted_data_files(users_json, json_output_dir+"/", file_nn+".json")
+
+
 def build_userprofile(timestamp: Any, domain_name: str) -> UserMapT:
     """
     Returns:
@@ -110,15 +122,26 @@ def build_userprofile(timestamp: Any, domain_name: str) -> UserMapT:
     user_map: Dict[str, Any] = {}
     user_id = 0
 
+    # mattermost_data_file = os.path.join(mattermost_data_dir, "export.json")
     rc_dump = OPTIONS.get('rocketchat_dump')
-    with open(f'./{rc_dump}/rocketchat_avatars.bson', 'rb') as fcache:
+    print(rc_dump)
+    with open(os.path.join(rc_dump, "rocketchat_avatars.bson"), 'rb') as fcache:
         avatars = ListFilter(bson.decode_all(fcache.read()))
-    with open(f'./{rc_dump}/rocketchat_avatars.files.bson', 'rb') as fcache:
+        # print(bson.decode_all(fcache.read()))
+    with open(os.path.join(rc_dump, "rocketchat_avatars.files.bson"), 'rb') as fcache:
+    # with open(f'./{rc_dump}/rocketchat_avatars.files.bson', 'rb') as fcache:
         files = ListFilter(bson.decode_all(fcache.read()))
-    with open(f'./{rc_dump}/rocketchat_avatars.chunks.bson', 'rb') as fcache:
+        # print(bson.decode_all(fcache.read()))
+    # # with open(f'./{rc_dump}/rocketchat_avatars.chunks.bson', 'rb') as fcache:
+    with open(os.path.join(rc_dump, "rocketchat_avatars.chunks.bson"), 'rb') as fcache:
         chunks = ListFilter(bson.decode_all(fcache.read()))
-    with open(f'./{rc_dump}/users.bson', 'rb') as fcache:
-        users = ListFilter(bson.decode_all(fcache.read()))
+        # print(bson.decode_all(fcache.read()))
+    # with open(f'./{rc_dump}/users.bson', 'rb') as fcache:
+    with open(os.path.join(rc_dump, "users.bson"), 'rb') as fcache:
+        users_json = bson.decode_all(fcache.read())
+        users = ListFilter(users_json)
+
+    print(users_json)
 
     # ensure avatar folder exists
     opath = '{}/avatars/{}'.format(OPTIONS['output_dir'], realm_id)
@@ -128,6 +151,8 @@ def build_userprofile(timestamp: Any, domain_name: str) -> UserMapT:
     for data in users.dicts:
         uname = data['username']
         if uname not in user_map:
+            if data["type"] != "user":
+                continue
             user_map[uname] = {'zulip_id': user_id, 'full_name': data['name'],
                                'rooms': data['__rooms']}
             email = data['emails'][0]['address']
@@ -549,7 +574,7 @@ def get_attachments(
             s3_path = "/".join([
                 str(realm_id),
                 format(random.randint(0, 255), 'x'),
-                random_name(18),
+                secrets.token_urlsafe(18),
                 sanitize_name(fileinfo['name'])
             ])
             message['msg'] += "[{}](/user_uploads/{})".format(upload['name'],
@@ -658,5 +683,6 @@ def do_convert_data(output_dir: str, options: Dict[str, Any]) -> None:
 
 
 def write_data_to_file(output_file: str, data: Any) -> None:
-    with open(output_file, "w") as f:
-        f.write(ujson.dumps(data, indent=4))
+    create_converted_data_files(data, output_file, "")
+    # with open(output_file, "w") as f:
+    #     f.write(ujson.dumps(data, indent=4))
