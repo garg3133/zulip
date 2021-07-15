@@ -153,6 +153,13 @@ export function make_compose_box_full_size() {
 
     $("#compose").addClass("compose-fullscreen");
 
+    // Set the `top` property of compose box.
+    const compose_top =
+        $("#navbar_alerts_wrapper").height() +
+        $(".header").height() +
+        Number.parseInt($(".header").css("paddingBottom"), 10);
+    $("#compose").css("top", compose_top + "px");
+
     $(".collapse_composebox_button").show();
     $(".expand_composebox_button").hide();
     $("#compose-textarea").trigger("focus");
@@ -162,6 +169,9 @@ export function make_compose_box_original_size() {
     set_full_size(false);
 
     $("#compose").removeClass("compose-fullscreen");
+
+    // Unset the `top` property of compose-box.
+    $("#compose").css("top", "");
 
     // Again initialise the compose textarea as it was destroyed
     // when compose box was made full screen
